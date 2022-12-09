@@ -8,11 +8,13 @@ char get_random(char min, char max){
 	return r;
 }
 
-void Aereo(int id, struct message *pms, int ptorre){
+void Aereo(int id, int ptorre){
 
 	char sid[10];
+	struct message ms;
+	memset(&ms, '\0', sizeof(struct message));
 	sigset_t sigset;
-	//char buff[SIZE];
+
 	sprintf(sid, "aereo %d", id);
 	print_Event(sid, "avvio!", false);
 	int mypid = getpid();
@@ -34,7 +36,7 @@ void Aereo(int id, struct message *pms, int ptorre){
 	//sigdelset(&sigset, SIGALRM); // remove sigalarm
 	//printf("check: %d\n", sigismember(&sigset, SIGALRM));
 
-	send_mex(pms, mypid, "ready", ptorre); // send mex to torre
+	send_mex(&ms, mypid, "ready", ptorre); // send mex to torre
 	//checkSig(ptorre, 1);
 	
 	print_Event(sid, "richiesta decollo inviata", true);
@@ -43,13 +45,13 @@ void Aereo(int id, struct message *pms, int ptorre){
 	while(true){
 		alarm(2);
 		sigwait(&sigset, &sig);
-		if(sig == SIGALRM)send_mex(pms, mypid, "resend", ptorre);
+		if(sig == SIGALRM)send_mex(&ms, mypid, "resend", ptorre);
 		else break;
 	}
-	receive_mex(pms);
+	receive_mex(&ms);
 
 	//printf("ms.pid:%d, ms.mex:%s\n", pms->pid, pms->mex);
-	if(strcmp(pms->mex, "ok") == 0 && pms->pid == ptorre){
+	if(strcmp(ms.mex, "ok") == 0 && ms.pid == ptorre){
 		unsigned char myrand = get_random(5,15);
 		print_Event(sid, "decollo ", false);
 		printf("in %d secondi\n", myrand);
@@ -57,7 +59,7 @@ void Aereo(int id, struct message *pms, int ptorre){
 		alarm((unsigned int)myrand); // set alarm to awake aereo
 		sig = 0; //reset signal 
 		while(sig != SIGALRM)sigwait(&sigset, &sig);
-		send_mex(pms, mypid, "ok", ptorre);
+		send_mex(&ms, mypid, "ok", ptorre);
 		print_Event(sid, "decollato", true);
 		return;
 	}
@@ -67,23 +69,27 @@ void Hangar(){
 	int pid[10];
 	int *status;
 	int ptorre = getpid()-1;
+	int w;
+	const int proc = 3;
 	struct message ms;
+	memset(&ms, '\0', sizeof(struct message));
 	 
 	//while(read(fdr, ptorre, sizeof(int)) < 0);
 	print_Event("hangar", "avvio!", true);
-	for(int i = 0; i < 3; i++){
+	for(int i = 0; i < proc; i++){
 		pid[i]=fork();
 		if(pid[i] == 0){
-			Aereo(i, &ms, ptorre);
-			return;
+			Aereo(i, ptorre);
+			exit(1); // chiude i figli
 		}
 	}
-	for(int i = 0; i < 3; i++){
-		waitpid(pid[i] ,&status ,0); // wait all process to finish
-		printf("finish %d\n", pid[i]);
+
+	for(w = 0; w < proc; w++){ // wait processes to finish
+		waitpid(pid[w] ,&status, 0); 
+		printf("finish %d\n", pid[w]);
 	}
 	
-	if(WIFEXITED(status)){
+	if(WIFEXITED(status) && w==proc){
 		printf("here!");
 	 	send_mex(&ms, getpid(), "end", ptorre);
 	}

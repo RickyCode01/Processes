@@ -16,6 +16,7 @@
 void sigHandler(){}
 
 void print_Event(char* source, char* description, bool newline){
+	//fflush(stdout);
 	time_t now; // struttura di memorizzazione tempo attuale
 	time(&now); // funzione per salvare tempo attuale nella struttura
 	struct tm *pTm = localtime(&now);
@@ -87,8 +88,13 @@ int main(int argc, char const *argv[])
 		phangar = fork(); // processo hangar
 		if(phangar == 0) Hangar();
 	}
+
 	waitpid(ptorre ,&stat, NULL);
-	close(fdw);
-	close(fdr);
+	if(WIFEXITED(stat)){
+		printf("closing...\n");
+		close(fdw);
+		close(fdr);
+		unlink(myfifo);
+	}		
 	return 0;
 }

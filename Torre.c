@@ -12,13 +12,14 @@ void Torre(){
 	//write(fdw, getpid(), sizeof(getpid()));
 	struct message ms; // message struct
 	sigset_t sigset; // struct for set signals
+	memset(&ms, '\0', sizeof(struct message)); //reset message struct
 
 	int i = 0, j = 0; // init queue index 
 	s.count = 2; //	init counter for railway resources
 	setSig(&sigset, SIGUSR1, true); // set SIGUSR1 signal
 	while(strcmp(ms.mex, "end") != 0){
 		sigwait(&sigset); // wait SIGUSR1 signal 
-		receive_mex(&ms);
+		receive_mex(&ms); 
 		//printf("torre read from %d:%s\n", ms.pid, ms.mex);
 		/* se piu di un signal viene inviato contemporaneamente uno dei 
 		due si perde -> risolvere */
@@ -45,5 +46,4 @@ void Torre(){
 		}
 	}
 	print_Event("torre", "fine", true);
-
 }
