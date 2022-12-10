@@ -40,9 +40,6 @@ void Torre(){
 				printf("sblocco %d\n", s.fifo[j]);
 				j++;
 			}
-		}else if (strcmp(ms.mex, "resend") == 0){
-			printf("%d resend\n", ms.pid);
-			send_mex(&ms, mypid, "ok", ms.pid);
 		}
 	}
 	print_Event("torre", "fine", true);

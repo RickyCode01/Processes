@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <pthread.h>
 #include "Aeroporto.h"
 #include "Torre.c"
 #include "Hangar.c"
@@ -26,8 +27,8 @@ void print_Event(char* source, char* description, bool newline){
 }
 
 void setSig(sigset_t *pset, int signum, bool block){
-	/* check if signal is received by global flag and resend it if not */
-	//BLOCK SIGUSR1 
+	// check if signal is received by global flag and resend it if not 
+	// BLOCK SIGUSR1 
 	if(sigemptyset(pset) < 0)perror("errore sigempty:"); //reset all set of signal
 	if(sigaddset(pset, signum) < 0)perror("errore sigset:"); //add SIGUSR1 to set
 	if(block){
@@ -40,6 +41,7 @@ void setSig(sigset_t *pset, int signum, bool block){
 
 void send_mex(struct message *pms, int source, char *text, int dest){
 	//printf("ho inviato %s a %d\n", ms.mex, ms.pid);
+	pthread_mutex_trylock(&mutex);
 	memset(pms, '\0', sizeof(struct message));
 	pms->pid = source;
 	strcpy(pms->mex, text);
@@ -47,6 +49,7 @@ void send_mex(struct message *pms, int source, char *text, int dest){
 	write(fdw, pms, sizeof(struct message));
 	//sleep(1);
 	kill(dest, SIGUSR1);
+	pthread_mutex_unlock(&mutex);
 }
 
 void receive_mex(struct message *pms){
@@ -72,9 +75,9 @@ int main(int argc, char const *argv[])
 	memset(&sa, '\0', sizeof(struct sigaction)); 
 	sa.sa_handler = &sigHandler; // pointer to function
 
-	// //set signal action to change behavior 
+	// set signal action to change behavior 
 	sigaction(SIGALRM, &sa, NULL); // sig for timer
-	sigaction(SIGUSR1, &sa, NULL); // sig for sync messaged 
+	sigaction(SIGUSR1, &sa, NULL); // sig for sync messaged
 
 	//settings for mask signals (synchornization)
 	//sigemptyset(&sigset); // reset all set of signal
@@ -82,16 +85,19 @@ int main(int argc, char const *argv[])
 	//sigprocmask(SIG_BLOCK, &sigset, NULL);
 	//SIG_BLOCK = union of original blocked signals and your set
 
+	pthread_mutex_init(&mutex, NULL);
+
 	ptorre = fork(); // processo torre
-	if (ptorre == 0) Torre(); 
+	if (ptorre == 0){ Torre(); exit(1);} 
 	else{
 		phangar = fork(); // processo hangar
-		if(phangar == 0) Hangar();
+		if(phangar == 0){ Hangar(); exit(1); }
 	}
 
 	waitpid(ptorre ,&stat, NULL);
 	if(WIFEXITED(stat)){
 		printf("closing...\n");
+		pthread_mutex_destroy(&mutex);
 		close(fdw);
 		close(fdr);
 		unlink(myfifo);

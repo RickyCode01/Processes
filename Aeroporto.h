@@ -2,6 +2,8 @@
 
 int fdw, fdr;
 
+pthread_mutex_t mutex;
+
 struct message{
 	int pid;
 	char mex[10];
