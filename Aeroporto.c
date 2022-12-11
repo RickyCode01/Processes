@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <signal.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -14,7 +15,9 @@
 #include "Torre.c"
 #include "Hangar.c"
 
-void sigHandler(){}
+void sigHandler(int sig, siginfo_t *si, void *uap){
+	//printf("sending process ID:%d\n", si->si_pid);
+}
 
 void print_Event(char* source, char* description, bool newline){
 	//fflush(stdout);
@@ -26,11 +29,12 @@ void print_Event(char* source, char* description, bool newline){
 	printf(format ,pTm->tm_hour, pTm->tm_min, pTm->tm_sec, source, description);
 }
 
-void setSig(sigset_t *pset, int signum, bool block){
+void setSig(sigset_t *pset, int signum1, int signum2, bool block){
 	// check if signal is received by global flag and resend it if not 
 	// BLOCK SIGUSR1 
 	if(sigemptyset(pset) < 0)perror("errore sigempty:"); //reset all set of signal
-	if(sigaddset(pset, signum) < 0)perror("errore sigset:"); //add SIGUSR1 to set
+	if(signum1 != 0)sigaddset(pset, signum1); // add signum1 to set
+	if(signum2 != 0)sigaddset(pset, signum2); // add signum2 to set
 	if(block){
 		if(sigprocmask(SIG_BLOCK, pset, NULL) < 0)perror("errore sigmask:");
 	} //union original with my set
@@ -40,14 +44,12 @@ void setSig(sigset_t *pset, int signum, bool block){
 }
 
 void send_mex(struct message *pms, int source, char *text, int dest){
-	//printf("ho inviato %s a %d\n", ms.mex, ms.pid);
 	pthread_mutex_trylock(&mutex);
 	memset(pms, '\0', sizeof(struct message));
 	pms->pid = source;
 	strcpy(pms->mex, text);
-	//printf("pid:%d, mex:%s\n", pms->pid, pms->mex);
+	printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);
 	write(fdw, pms, sizeof(struct message));
-	//sleep(1);
 	kill(dest, SIGUSR1);
 	pthread_mutex_unlock(&mutex);
 }
@@ -57,7 +59,6 @@ void receive_mex(struct message *pms){
 	read(fdr, pms, sizeof(struct message));
 }
 
-
 int main(int argc, char const *argv[])
 {	
 	char *myfifo = "/tmp/myfifo";
@@ -66,26 +67,27 @@ int main(int argc, char const *argv[])
 	fifo file permission for OS */
 	if(mkfifo(myfifo, S_IRWXU) < 0) perror("errore fifo:"); 
 	/* verificare errore apertura canali fifo ed eventualmente generare codice errore*/
+
 	if((fdr = open(myfifo, O_RDONLY | O_NONBLOCK)) < 0)perror("errore fdr:"); // open fifo for reading
-	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("errore fdw:");; // open fifo to writing
+	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("errore fdw:"); // open fifo to writing
 	int ptorre, phangar;
 	int *stat;
 
 	struct sigaction sa; 
 	memset(&sa, '\0', sizeof(struct sigaction)); 
-	sa.sa_handler = &sigHandler; // pointer to function
+	sa.sa_sigaction = &sigHandler; // pointer to function
+	sa.sa_flags = SA_SIGINFO;
 
 	// set signal action to change behavior 
 	sigaction(SIGALRM, &sa, NULL); // sig for timer
 	sigaction(SIGUSR1, &sa, NULL); // sig for sync messaged
+	sigaction(SIGUSR2, &sa, NULL); // sig for signaling end child proc
 
 	//settings for mask signals (synchornization)
 	//sigemptyset(&sigset); // reset all set of signal
 	//sigaddset(&sigset, SIGUSR1); //add SIGUSR1 to set
 	//sigprocmask(SIG_BLOCK, &sigset, NULL);
 	//SIG_BLOCK = union of original blocked signals and your set
-
-	pthread_mutex_init(&mutex, NULL);
 
 	ptorre = fork(); // processo torre
 	if (ptorre == 0){ Torre(); exit(1);} 
@@ -97,7 +99,6 @@ int main(int argc, char const *argv[])
 	waitpid(ptorre ,&stat, NULL);
 	if(WIFEXITED(stat)){
 		printf("closing...\n");
-		pthread_mutex_destroy(&mutex);
 		close(fdw);
 		close(fdr);
 		unlink(myfifo);

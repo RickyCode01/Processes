@@ -9,7 +9,6 @@ char get_random(char min, char max){
 }
 
 void Aereo(int id, int ptorre){
-
 	char sid[10];
 	struct message ms;
 	memset(&ms, '\0', sizeof(struct message));
@@ -20,17 +19,12 @@ void Aereo(int id, int ptorre){
 	int mypid = getpid();
 	printf("\tpid:%d\n", mypid);
 
-	// set signals for waiting and sync
-	sigemptyset(&sigset);
-	sigaddset(&sigset, SIGALRM);
-	sigaddset(&sigset, SIGUSR1);
-	sigprocmask(SIG_BLOCK, &sigset, NULL);
+	setSig(&sigset, SIGUSR1, SIGALRM, true);
 
 	// waiting preparation 
 	unsigned char myrand = get_random(3,8);
 	print_Event(sid, "preparazione ", false);
 	printf("in %d secondi\n", myrand);
-	//setSig(&sigset, SIGALRM, true);
 	alarm((unsigned int)myrand); // set alarm to awake aereo
 	int sig = 0;
 	while(sig != SIGALRM)sigwait(&sigset, &sig); // wait until SIGALRM is received
@@ -41,25 +35,20 @@ void Aereo(int id, int ptorre){
 	//pthread_mutex_trylock(&mutex);
 	send_mex(&ms, mypid, "ready", ptorre); // send mex to torre
 	//pthread_mutex_unlock(&mutex);
-	//checkSig(ptorre, 1);
 	
 	print_Event(sid, "richiesta decollo inviata", true);
 
-	//setSig(&sigset, SIGUSR1, true);
 	/*while(true){
 		alarm(2);
 		sigwait(&sigset, &sig);
 		if(sig == SIGALRM)send_mex(&ms, mypid, "ready", ptorre);
 		else break;
 	}*/
-
+	sig = 0;
 	sigwait(&sigset, &sig);
 	receive_mex(&ms);
-	printf("%d here! ", mypid);
-
-	printf("ms.pid:%d, ms.mex:%s\n", ms.pid, ms.mex);
+	printf("%d riceve da %d:%s\n", mypid, ms.pid, ms.mex);
 	if(strcmp(ms.mex, "ok") == 0 && ms.pid == ptorre){
-
 		//waiting take off
 		unsigned char myrand = get_random(5,15);
 		print_Event(sid, "decollo ", false);
@@ -68,8 +57,8 @@ void Aereo(int id, int ptorre){
 		alarm((unsigned int)myrand); // set alarm to awake aereo
 		sig = 0; //reset signal 
 		while(sig != SIGALRM)sigwait(&sigset, &sig);
-
-		send_mex(&ms, mypid, "ok", ptorre);
+		//send_mex(&ms, mypid, "ok", ptorre);
+		kill(ptorre, SIGUSR2);
 		print_Event(sid, "decollato", true);
 		return;
 	}else{
@@ -82,9 +71,9 @@ void Hangar(){
 	int *status;
 	int ptorre = getpid()-1;
 	int w;
-	const int proc = 4;
-	struct message ms;
-	memset(&ms, '\0', sizeof(struct message));
+	const int proc = 5;
+	struct message mymex;
+	memset(&mymex, '\0', sizeof(struct message));
 	 
 	//while(read(fdr, ptorre, sizeof(int)) < 0);
 	print_Event("hangar", "avvio!", true);
@@ -102,7 +91,7 @@ void Hangar(){
 	
 	if(WIFEXITED(status) && w==proc){
 		//printf("here!");
-	 	send_mex(&ms, getpid(), "end", ptorre);
+	 	send_mex(&mymex, getpid(), "end", ptorre);
 	}
 
 }
