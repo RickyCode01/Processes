@@ -46,19 +46,18 @@ void Aereo(int id, int ptorre){
 	}*/
 	sig = 0;
 	sigwait(&sigset, &sig);
-	receive_mex(&ms);
-	printf("%d riceve da %d:%s\n", mypid, ms.pid, ms.mex);
-	if(strcmp(ms.mex, "ok") == 0 && ms.pid == ptorre){
+	//receive_mex(&ms);
+	//printf("%d <- %d:%s\n", mypid, ms.pid, ms.mex);
+	if(/*strcmp(ms.mex, "ok") == 0 && ms.pid == ptorre*/ sig == SIGUSR1){
 		//waiting take off
 		unsigned char myrand = get_random(5,15);
 		print_Event(sid, "decollo ", false);
 		printf("in %d secondi\n", myrand);
 		//setSig(&sigset, SIGALRM, true);
 		alarm((unsigned int)myrand); // set alarm to awake aereo
-		sig = 0; //reset signal 
+		//sig = 0; //reset signal 
 		while(sig != SIGALRM)sigwait(&sigset, &sig);
-		//send_mex(&ms, mypid, "ok", ptorre);
-		kill(ptorre, SIGUSR2);
+		send_mex(&ms, mypid, "takeoff", ptorre);
 		print_Event(sid, "decollato", true);
 		return;
 	}else{
@@ -71,9 +70,11 @@ void Hangar(){
 	int *status;
 	int ptorre = getpid()-1;
 	int w;
-	const int proc = 5;
+	const int proc = 3;
 	struct message mymex;
 	memset(&mymex, '\0', sizeof(struct message));
+
+	fdw = open(myfifo, O_WRONLY);
 	 
 	//while(read(fdr, ptorre, sizeof(int)) < 0);
 	print_Event("hangar", "avvio!", true);

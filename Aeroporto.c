@@ -15,7 +15,7 @@
 #include "Torre.c"
 #include "Hangar.c"
 
-void sigHandler(int sig, siginfo_t *si, void *uap){
+void sigHandler(/*int sig, siginfo_t *si, void *uap*/){
 	//printf("sending process ID:%d\n", si->si_pid);
 }
 
@@ -50,7 +50,7 @@ void send_mex(struct message *pms, int source, char *text, int dest){
 	strcpy(pms->mex, text);
 	printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);
 	write(fdw, pms, sizeof(struct message));
-	kill(dest, SIGUSR1);
+	// kill(dest, SIGUSR1);
 	pthread_mutex_unlock(&mutex);
 }
 
@@ -61,22 +61,22 @@ void receive_mex(struct message *pms){
 
 int main(int argc, char const *argv[])
 {	
-	char *myfifo = "/tmp/myfifo";
+	// char *myfifo = "/tmp/myfifo";
 	unlink(myfifo); 
 	/* S_IRWXU is a definition in stat.h in octal value to set
 	fifo file permission for OS */
 	if(mkfifo(myfifo, S_IRWXU) < 0) perror("errore fifo:"); 
 	/* verificare errore apertura canali fifo ed eventualmente generare codice errore*/
 
-	if((fdr = open(myfifo, O_RDONLY | O_NONBLOCK)) < 0)perror("errore fdr:"); // open fifo for reading
-	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("errore fdw:"); // open fifo to writing
+	// if((fdr = open(myfifo, O_RDONLY | O_NONBLOCK)) < 0)perror("errore fdr:"); // open fifo for reading
+	// if((fdw = open(myfifo, O_WRONLY)) < 0)perror("errore fdw:"); // open fifo to writing
 	int ptorre, phangar;
 	int *stat;
 
 	struct sigaction sa; 
 	memset(&sa, '\0', sizeof(struct sigaction)); 
-	sa.sa_sigaction = &sigHandler; // pointer to function
-	sa.sa_flags = SA_SIGINFO;
+	sa.sa_handler = &sigHandler; // pointer to function
+	//sa.sa_flags = SA_SIGINFO;
 
 	// set signal action to change behavior 
 	sigaction(SIGALRM, &sa, NULL); // sig for timer
@@ -99,8 +99,8 @@ int main(int argc, char const *argv[])
 	waitpid(ptorre ,&stat, NULL);
 	if(WIFEXITED(stat)){
 		printf("closing...\n");
-		close(fdw);
 		close(fdr);
+		close(fdw);
 		unlink(myfifo);
 	}		
 	return 0;

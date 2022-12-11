@@ -1,8 +1,9 @@
 // header file for standard type definition and shared functions
 
+char *myfifo = "/tmp/myfifo";
 int fdw, fdr;
 
-pthread_mutex_t mutex;
+pthread_mutex_t mutex, mutex2;
 
 struct message{
 	int pid;
