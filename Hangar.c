@@ -1,5 +1,16 @@
 // processo Hangar Aeroporto
 
+void send_mex(struct message *pms, int source, char *text, int dest){
+	sem_wait(&mutex);
+	memset(pms, '\0', sizeof(struct message));
+	pms->pid = source;
+	strcpy(pms->mex, text);
+	printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);;
+	sem_post(&mutex);
+	if((write(fdw, pms, sizeof(struct message))) < 0)perror("errore write:");
+	// kill(dest, SIGUSR1);
+}
+
 char get_random(char min, char max){
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -11,7 +22,7 @@ char get_random(char min, char max){
 void Aereo(int id, int ptorre){
 	char sid[10];
 	struct message ms;
-	memset(&ms, '\0', sizeof(struct message));
+	//memset(&ms, '\0', sizeof(struct message));
 	sigset_t sigset;
 
 	sprintf(sid, "aereo %d", id);
@@ -70,12 +81,11 @@ void Hangar(){
 	int *status;
 	int ptorre = getpid()-1;
 	int w;
-	const int proc = 3;
-	struct message mymex;
-	memset(&mymex, '\0', sizeof(struct message));
+	const int proc = 10;
 
-	fdw = open(myfifo, O_WRONLY);
-	 
+	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("fdr error:");
+	sem_open(mysema, O_CREAT, S_IRWXU, 1);
+
 	//while(read(fdr, ptorre, sizeof(int)) < 0);
 	print_Event("hangar", "avvio!", true);
 	for(int i = 0; i < proc; i++){
@@ -91,8 +101,10 @@ void Hangar(){
 	}
 	
 	if(WIFEXITED(status) && w==proc){
-		//printf("here!");
+		sem_close(&mutex);
+		struct message mymex;
 	 	send_mex(&mymex, getpid(), "end", ptorre);
+	 	close(fdw);
 	}
 
 }

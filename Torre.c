@@ -13,7 +13,7 @@ void Torre(){
 	struct message ms; // message struct
 	memset(&ms, '\0', sizeof(struct message)); //reset message struct
 
-	fdr = open(myfifo, O_RDONLY);
+	if((fdr = open(myfifo, O_RDONLY)) < 0)perror("fdr error: ");
 
 	// sigset_t sigset; // set mask signal
 	// int sig; // signal from sigwait
@@ -25,7 +25,7 @@ void Torre(){
 		// sig = 0; //reset signal
 		// sigwait(&sigset, &sig); // wait signals signal
 		receive_mex(&ms);
-		// printf("torre riceve da %d:%s\n", ms.pid, ms.mex);
+		//printf("torre riceve da %d:%s\n", ms.pid, ms.mex);
 		/* se piu di un signal viene inviato contemporaneamente uno dei 
 		due si perde -> risolvere */
 		if(strcmp(ms.mex, "ready") == 0){
@@ -39,9 +39,9 @@ void Torre(){
 				//send_mex(&ms, mypid, "ok", ms.pid);
 				kill(ms.pid, SIGUSR1);
 			}
-		}else if(strcmp(ms.mex, "takeoff")){ //sblocca aereo in coda fifo
+		}else if(strcmp(ms.mex, "takeoff") == 0){ //sblocca aereo in coda fifo
 			s.count++;
-			// printf("count:%d", s.count);
+			//printf("count:%d", s.count);
 			if(s.fifo[j] != NULL){ //sblocco aereo se in coda
 				//send_mex(&ms, mypid, "ok", s.fifo[j]);
 				kill(s.fifo[j], SIGUSR1);
@@ -50,5 +50,7 @@ void Torre(){
 			}
 		}
 	}
+
+	close(fdr);
 	print_Event("torre", "fine", true);
 }

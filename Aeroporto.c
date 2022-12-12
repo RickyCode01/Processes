@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <pthread.h>
+#include <semaphore.h>
 #include "Aeroporto.h"
 #include "Torre.c"
 #include "Hangar.c"
@@ -43,17 +43,6 @@ void setSig(sigset_t *pset, int signum1, int signum2, bool block){
 	}
 }
 
-void send_mex(struct message *pms, int source, char *text, int dest){
-	pthread_mutex_trylock(&mutex);
-	memset(pms, '\0', sizeof(struct message));
-	pms->pid = source;
-	strcpy(pms->mex, text);
-	printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);
-	write(fdw, pms, sizeof(struct message));
-	// kill(dest, SIGUSR1);
-	pthread_mutex_unlock(&mutex);
-}
-
 void receive_mex(struct message *pms){
 	memset(pms, '\0', sizeof(struct message));
 	read(fdr, pms, sizeof(struct message));
@@ -68,15 +57,15 @@ int main(int argc, char const *argv[])
 	if(mkfifo(myfifo, S_IRWXU) < 0) perror("errore fifo:"); 
 	/* verificare errore apertura canali fifo ed eventualmente generare codice errore*/
 
-	// if((fdr = open(myfifo, O_RDONLY | O_NONBLOCK)) < 0)perror("errore fdr:"); // open fifo for reading
-	// if((fdw = open(myfifo, O_WRONLY)) < 0)perror("errore fdw:"); // open fifo to writing
+	//if((fdr = open(myfifo, O_RDONLY | O_NONBLOCK)) < 0)perror("errore fdr:"); // open fifo for reading
+	//if((fdw = open(myfifo, O_WRONLY)) < 0)perror("errore fdw:"); // open fifo to writing
 	int ptorre, phangar;
 	int *stat;
 
 	struct sigaction sa; 
 	memset(&sa, '\0', sizeof(struct sigaction)); 
 	sa.sa_handler = &sigHandler; // pointer to function
-	//sa.sa_flags = SA_SIGINFO;
+	sa.sa_flags = SA_RESTART /*| SA_SIGINFO */; 
 
 	// set signal action to change behavior 
 	sigaction(SIGALRM, &sa, NULL); // sig for timer
@@ -99,8 +88,7 @@ int main(int argc, char const *argv[])
 	waitpid(ptorre ,&stat, NULL);
 	if(WIFEXITED(stat)){
 		printf("closing...\n");
-		close(fdr);
-		close(fdw);
+		sem_unlink(mysema);
 		unlink(myfifo);
 	}		
 	return 0;
