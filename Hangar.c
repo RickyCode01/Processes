@@ -1,12 +1,12 @@
 // processo Hangar Aeroporto
 
 void send_mex(struct message *pms, int source, char *text, int dest){
-	sem_wait(&mutex);
+	//sem_wait(&mutex);
 	memset(pms, '\0', sizeof(struct message));
 	pms->pid = source;
 	strcpy(pms->mex, text);
 	printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);;
-	sem_post(&mutex);
+	//sem_post(&mutex);
 	if((write(fdw, pms, sizeof(struct message))) < 0)perror("errore write:");
 	// kill(dest, SIGUSR1);
 }
@@ -81,14 +81,14 @@ void Hangar(){
 	int *status;
 	int ptorre = getpid()-1;
 	int w;
-	const int proc = 10;
+	// const int proc = 10;
 
 	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("fdr error:");
-	sem_open(mysema, O_CREAT, S_IRWXU, 1);
+	//sem_open(mysema, O_CREAT, S_IRWXU, 1);
 
 	//while(read(fdr, ptorre, sizeof(int)) < 0);
 	print_Event("hangar", "avvio!", true);
-	for(int i = 0; i < proc; i++){
+	for(int i = 0; i < childs; i++){
 		pid[i]=fork();
 		if(pid[i] == 0){
 			Aereo(i, ptorre);
@@ -96,12 +96,12 @@ void Hangar(){
 		}
 	}
 
-	for(w = 0; w < proc; w++){ // wait processes to finish
+	for(w = 0; w < childs; w++){ // wait processes to finish
 		waitpid(pid[w] ,&status, 0); 
 	}
 	
-	if(WIFEXITED(status) && w==proc){
-		sem_close(&mutex);
+	if(WIFEXITED(status) && w==childs){
+		//sem_close(&mutex);
 		struct message mymex;
 	 	send_mex(&mymex, getpid(), "end", ptorre);
 	 	close(fdw);

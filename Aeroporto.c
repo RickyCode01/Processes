@@ -19,13 +19,28 @@ void sigHandler(/*int sig, siginfo_t *si, void *uap*/){
 	//printf("sending process ID:%d\n", si->si_pid);
 }
 
+int chld_n(char *name){
+	int i = -1;
+	while(name){
+		if((i = strtol(name, NULL, 10)))break; 
+		else name++;
+	}
+	return i;
+}
+
 void print_Event(char* source, char* description, bool newline){
-	//fflush(stdout);
+	fflush(stdout);
 	time_t now; // struttura di memorizzazione tempo attuale
 	time(&now); // funzione per salvare tempo attuale nella struttura
 	struct tm *pTm = localtime(&now);
-	char format[] = "%02d:%02d:%02d %s:%s\n";
-	if(!newline) strcpy(format, "%02d:%02d:%02d %s:%s"); 
+	char format[256] = "%02d:%02d:%02d";
+	if(strcmp(source, "torre") && strcmp(source, "hangar")){
+		//printf("cld_n:%d\n", chld_n(source)%childs);
+		strcat(format, colours[chld_n(source)%colori]);
+	}
+	strcat(format, " %s\033[0m:%s\n");
+	if(!newline) format[strlen(format)-1] = '\0';
+	//printf("string:%s", format);
 	printf(format ,pTm->tm_hour, pTm->tm_min, pTm->tm_sec, source, description);
 }
 
@@ -88,7 +103,7 @@ int main(int argc, char const *argv[])
 	waitpid(ptorre ,&stat, NULL);
 	if(WIFEXITED(stat)){
 		printf("closing...\n");
-		sem_unlink(mysema);
+		//sem_unlink(mysema);
 		unlink(myfifo);
 	}		
 	return 0;
