@@ -1,14 +1,11 @@
 // processo Hangar Aeroporto
 
 void send_mex(struct message *pms, int source, char *text, int dest){
-	//sem_wait(&mutex);
 	memset(pms, '\0', sizeof(struct message));
 	pms->pid = source;
 	strcpy(pms->mex, text);
 	printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);;
-	//sem_post(&mutex);
 	if((write(fdw, pms, sizeof(struct message))) < 0)perror("errore write:");
-	// kill(dest, SIGUSR1);
 }
 
 char get_random(char min, char max){
@@ -22,7 +19,6 @@ char get_random(char min, char max){
 void Aereo(int id, int ptorre){
 	char sid[10];
 	struct message ms;
-	//memset(&ms, '\0', sizeof(struct message));
 	sigset_t sigset;
 
 	sprintf(sid, "aereo %d", id);
@@ -43,18 +39,10 @@ void Aereo(int id, int ptorre){
 	//sigdelset(&sigset, SIGALRM); // remove sigalarm
 	//printf("check: %d\n", sigismember(&sigset, SIGALRM));
 
-	//pthread_mutex_trylock(&mutex);
 	send_mex(&ms, mypid, "ready", ptorre); // send mex to torre
-	//pthread_mutex_unlock(&mutex);
 	
 	print_Event(sid, "richiesta decollo inviata", true);
 
-	/*while(true){
-		alarm(2);
-		sigwait(&sigset, &sig);
-		if(sig == SIGALRM)send_mex(&ms, mypid, "ready", ptorre);
-		else break;
-	}*/
 	sig = 0;
 	sigwait(&sigset, &sig);
 	//receive_mex(&ms);
@@ -78,13 +66,12 @@ void Aereo(int id, int ptorre){
 
 void Hangar(){
 	int pid[10];
-	int *status;
+	int status;
 	int ptorre = getpid()-1;
 	int w;
 	// const int proc = 10;
 
 	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("fdr error:");
-	//sem_open(mysema, O_CREAT, S_IRWXU, 1);
 
 	//while(read(fdr, ptorre, sizeof(int)) < 0);
 	print_Event("hangar", "avvio!", true);
@@ -101,7 +88,6 @@ void Hangar(){
 	}
 	
 	if(WIFEXITED(status) && w==childs){
-		//sem_close(&mutex);
 		struct message mymex;
 	 	send_mex(&mymex, getpid(), "end", ptorre);
 	 	close(fdw);

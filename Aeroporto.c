@@ -10,7 +10,6 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <semaphore.h>
 #include "Aeroporto.h"
 #include "Torre.c"
 #include "Hangar.c"
@@ -36,7 +35,7 @@ void print_Event(char* source, char* description, bool newline){
 	char format[256] = "%02d:%02d:%02d";
 	if(strcmp(source, "torre") && strcmp(source, "hangar")){
 		//printf("cld_n:%d\n", chld_n(source)%childs);
-		strcat(format, colours[chld_n(source)%colori]);
+		strcat(format, colours[chld_n(source)%size]);
 	}
 	strcat(format, " %s\033[0m:%s\n");
 	if(!newline) format[strlen(format)-1] = '\0';
@@ -75,7 +74,7 @@ int main(int argc, char const *argv[])
 	//if((fdr = open(myfifo, O_RDONLY | O_NONBLOCK)) < 0)perror("errore fdr:"); // open fifo for reading
 	//if((fdw = open(myfifo, O_WRONLY)) < 0)perror("errore fdw:"); // open fifo to writing
 	int ptorre, phangar;
-	int *stat;
+	int stat;
 
 	struct sigaction sa; 
 	memset(&sa, '\0', sizeof(struct sigaction)); 
@@ -103,7 +102,6 @@ int main(int argc, char const *argv[])
 	waitpid(ptorre ,&stat, NULL);
 	if(WIFEXITED(stat)){
 		printf("closing...\n");
-		//sem_unlink(mysema);
 		unlink(myfifo);
 	}		
 	return 0;
