@@ -5,13 +5,16 @@ struct mysem{
 	int fifo[10];
 }s;
 
+void receive_mex(struct message *pms){
+	memset(pms, '\0', sizeof(struct message));
+	read(fdr, pms, sizeof(struct message));
+}
+
 void Torre(){
 	print_Event("torre", "avvio!", false);
 	int mypid = getpid();
 	printf("\tpid:%d\n",mypid);
-	write(fdw, getpid(), sizeof(getpid()));
 	struct message ms; // message struct
-	memset(&ms, '\0', sizeof(struct message)); //reset message struct
 
 	if((fdr = open(myfifo, O_RDONLY)) < 0)perror("fdr error: ");
 

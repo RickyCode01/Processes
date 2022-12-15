@@ -28,47 +28,40 @@ int chld_n(char *name){
 }
 
 void print_Event(char* source, char* description, bool newline){
-	fflush(stdout);
+	// fflush(stdout);
 	time_t now; // struttura di memorizzazione tempo attuale
 	time(&now); // funzione per salvare tempo attuale nella struttura
 	struct tm *pTm = localtime(&now);
 	char format[256] = "%02d:%02d:%02d";
-	if(strcmp(source, "torre") && strcmp(source, "hangar")){
+	if(strcmp(source, "torre") && strcmp(source, "hangar")){ // se source non è torre o hangar
 		//printf("cld_n:%d\n", chld_n(source)%childs);
 		strcat(format, colours[chld_n(source)%size]);
 	}
-	strcat(format, " %s\033[0m:%s\n");
+	strcat(format, " %s\033[0m:%s\n"); 
 	if(!newline) format[strlen(format)-1] = '\0';
 	//printf("string:%s", format);
 	printf(format ,pTm->tm_hour, pTm->tm_min, pTm->tm_sec, source, description);
 }
 
 void setSig(sigset_t *pset, int signum1, int signum2, bool block){
-	// check if signal is received by global flag and resend it if not 
-	// BLOCK SIGUSR1 
 	if(sigemptyset(pset) < 0)perror("errore sigempty:"); //reset all set of signal
-	if(signum1 != 0)sigaddset(pset, signum1); // add signum1 to set
-	if(signum2 != 0)sigaddset(pset, signum2); // add signum2 to set
+	if(signum1 > 0)sigaddset(pset, signum1); // add signum1 to set
+	if(signum2 > 0)sigaddset(pset, signum2); // add signum2 to set
 	if(block){
-		if(sigprocmask(SIG_BLOCK, pset, NULL) < 0)perror("errore sigmask:");
-	} //union original with my set
+		if(sigprocmask(SIG_BLOCK, pset, NULL) < 0)perror("errore sigmask:"); //union original with my set
+	} 
 	else{
 		if(sigprocmask(SIG_UNBLOCK, pset, NULL) < 0)perror("errore sigmask:");
 	}
 }
 
-void receive_mex(struct message *pms){
-	memset(pms, '\0', sizeof(struct message));
-	read(fdr, pms, sizeof(struct message));
-}
 
 int main(int argc, char const *argv[])
 {	
-	// char *myfifo = "/tmp/myfifo";
-	unlink(myfifo); 
+	//char *myfifo = "/tmp/myfifo";
 	/* S_IRWXU is a definition in stat.h in octal value to set
 	fifo file permission for OS */
-	if(mkfifo(myfifo, S_IRWXU) < 0) perror("errore fifo:"); 
+	if(mkfifo(myfifo, S_IRWXU) < 0) perror("errore fifo:"); // creo la named pipe
 	/* verificare errore apertura canali fifo ed eventualmente generare codice errore*/
 
 	//if((fdr = open(myfifo, O_RDONLY | O_NONBLOCK)) < 0)perror("errore fdr:"); // open fifo for reading
@@ -77,20 +70,14 @@ int main(int argc, char const *argv[])
 	int stat;
 
 	struct sigaction sa; 
-	memset(&sa, '\0', sizeof(struct sigaction)); 
+	memset(&sa, '\0', sizeof(struct sigaction)); // reset structure  
 	sa.sa_handler = &sigHandler; // pointer to function
-	sa.sa_flags = SA_RESTART /*| SA_SIGINFO */; 
+  // sa.sa_flags = SA_RESTART /*| SA_SIGINFO */; 
 
 	// set signal action to change behavior 
 	sigaction(SIGALRM, &sa, NULL); // sig for timer
 	sigaction(SIGUSR1, &sa, NULL); // sig for sync messaged
 	sigaction(SIGUSR2, &sa, NULL); // sig for signaling end child proc
-
-	//settings for mask signals (synchornization)
-	//sigemptyset(&sigset); // reset all set of signal
-	//sigaddset(&sigset, SIGUSR1); //add SIGUSR1 to set
-	//sigprocmask(SIG_BLOCK, &sigset, NULL);
-	//SIG_BLOCK = union of original blocked signals and your set
 
 	ptorre = fork(); // processo torre
 	if (ptorre == 0){ Torre(); exit(1);} 
@@ -99,10 +86,10 @@ int main(int argc, char const *argv[])
 		if(phangar == 0){ Hangar(); exit(1); }
 	}
 
-	waitpid(ptorre ,&stat, NULL);
+waitpid(ptorre ,&stat, NULL);
 	if(WIFEXITED(stat)){
 		printf("closing...\n");
-		unlink(myfifo);
+		unlink(myfifo); // close pipe
 	}		
 	return 0;
 }

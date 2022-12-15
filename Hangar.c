@@ -1,10 +1,10 @@
 // processo Hangar Aeroporto
 
 void send_mex(struct message *pms, int source, char *text, int dest){
-	memset(pms, '\0', sizeof(struct message));
+	memset(pms, '\0', sizeof(struct message)); // clean structure
 	pms->pid = source;
 	strcpy(pms->mex, text);
-	printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);;
+	printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);
 	if((write(fdw, pms, sizeof(struct message))) < 0)perror("errore write:");
 }
 
@@ -37,30 +37,29 @@ void Aereo(int id, int ptorre){
 	while(sig != SIGALRM)sigwait(&sigset, &sig); // wait until SIGALRM is received
 	print_Event(sid, "pronto per decollo", true);
 	//sigdelset(&sigset, SIGALRM); // remove sigalarm
-	//printf("check: %d\n", sigismember(&sigset, SIGALRM));
+	//printf("sig_check: %d\n", sigismember(&sigset, SIGALRM));
 
-	send_mex(&ms, mypid, "ready", ptorre); // send mex to torre
+	send_mex(&ms, mypid, "ready", ptorre); // send ready to torre
 	
 	print_Event(sid, "richiesta decollo inviata", true);
 
 	sig = 0;
-	sigwait(&sigset, &sig);
+	sigwait(&sigset, &sig); // wait for signaling from torre
 	//receive_mex(&ms);
 	//printf("%d <- %d:%s\n", mypid, ms.pid, ms.mex);
-	if(/*strcmp(ms.mex, "ok") == 0 && ms.pid == ptorre*/ sig == SIGUSR1){
-		//waiting take off
+	if(sig == SIGUSR1){ // check if signal is 
+		// prepaire to takeoff
 		unsigned char myrand = get_random(5,15);
 		print_Event(sid, "decollo ", false);
 		printf("in %d secondi\n", myrand);
 		//setSig(&sigset, SIGALRM, true);
 		alarm((unsigned int)myrand); // set alarm to awake aereo
-		//sig = 0; //reset signal 
-		while(sig != SIGALRM)sigwait(&sigset, &sig);
-		send_mex(&ms, mypid, "takeoff", ptorre);
+		while(sig != SIGALRM)sigwait(&sigset, &sig); // wait to sigalarm
+		send_mex(&ms, mypid, "takeoff", ptorre); // send takeoff to torre
 		print_Event(sid, "decollato", true);
 		return;
 	}else{
-		printf("messaggi non sincronizzati\n");
+		printf("segnale ricevuto: %d", sig);
 	}
 }
 
