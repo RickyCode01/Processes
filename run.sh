@@ -2,7 +2,7 @@
 
 printf "\tAREOPORTO - Riccardo Manoni - 2021/2022\n\n"
 
-if test -f "/tmp/myfifo"
+if test -p "/tmp/myfifo"
 then 
 rm "/tmp/myfifo"
 fi
