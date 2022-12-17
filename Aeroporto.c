@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <errno.h>
 #include "Aeroporto.h"
 #include "Torre.c"
@@ -18,26 +19,26 @@ void sigHandler(/*int sig, siginfo_t *si, void *uap*/){
 	//printf("sending process ID:%d\n", si->si_pid);
 }
 
-int chld_n(char *name){
-	int i = -1;
-	while(name){
-		if((i = strtol(name, NULL, 10)))break; 
-		else name++;
-	}
-	return i;
+int child_n(char *name){ // return child number from child name
+	while(*name){ // remeber to use pointer value to read single char of string
+		if(isdigit(*name))break; 
+		*name++; // increment pointer
+	} 
+	//printf("test: %d\n", atoi(name));
+	if(*name == 0)return -1; // pointer to NULL value
+	else return atoi(name); // return integer value of remaining strings number
 }
 
 void print_Event(char* source, char* description, bool newline){
-	// fflush(stdout);
+	//fflush(stdout);
 	time_t now; // struttura di memorizzazione tempo attuale
 	time(&now); // funzione per salvare tempo attuale nella struttura
 	struct tm *pTm = localtime(&now);
 	char format[256] = "%02d:%02d:%02d";
-	if(strcmp(source, "torre") && strcmp(source, "hangar")){ // se source non è torre o hangar
-		//printf("cld_n:%d\n", chld_n(source)%childs);
-		strcat(format, colours[chld_n(source)%size]);
-	}
-	strcat(format, " %s\033[0m:%s\n"); 
+	//printf("cld_n:%d\n", child_n("aereo 11"));
+	if(!strcmp(source, "torre") || !strcmp(source, "hangar")) strcat(format, "\e[1m");
+	else strcat(format, colours[child_n(source)%size]);
+	strcat(format, " %s\033[0m:%s\n");
 	if(!newline) format[strlen(format)-1] = '\0';
 	//printf("string:%s", format);
 	printf(format ,pTm->tm_hour, pTm->tm_min, pTm->tm_sec, source, description);
@@ -72,7 +73,7 @@ int main(int argc, char const *argv[])
 	struct sigaction sa; 
 	memset(&sa, '\0', sizeof(struct sigaction)); // reset structure  
 	sa.sa_handler = &sigHandler; // pointer to function
-  // sa.sa_flags = SA_RESTART /*| SA_SIGINFO */; 
+  	// sa.sa_flags = SA_RESTART /*| SA_SIGINFO */; 
 
 	// set signal action to change behavior 
 	sigaction(SIGALRM, &sa, NULL); // sig for timer

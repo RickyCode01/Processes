@@ -1,10 +1,10 @@
 // header file for standard type definition and shared functions
 
-const int childs = 5;  // costante figli e numero colori
+const int childs = 10;  // costante figli e numero colori
 char *myfifo = "/tmp/myfifo"; // named pipe path
 int fdw, fdr; // files descriptor fro read adn write pipe
 
-const char *colours[] = {"\033[31m", "\033[32m", "\033[33m", "\033[34m", "\033[35m","\033[36m", "\033[37m"};
+const char *colours[] = {"\e[31m", "\e[32m", "\e[33m", "\e[34m", "\e[35m","\e[36m", "\e[37m"};
 
 const int size = sizeof(colours)/sizeof(colours[0]); // number of element of array
  

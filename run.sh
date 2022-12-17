@@ -8,9 +8,10 @@ rm "/tmp/myfifo"
 fi
 
 out=$(gcc -w -o AEROPORTO  Aeroporto.c 2>&1)
-printf "$out"
 
 if test -z "$out"
 then
 ./AEROPORTO
+else
+printf "$out"
 fi
