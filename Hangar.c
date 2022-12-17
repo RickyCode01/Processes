@@ -20,9 +20,9 @@ void Aereo(char *id, int ptorre){
 	struct message ms;
 	sigset_t sigset;
 
-	print_Event(id, "avvio!", true);
+	print_Event(id, "avvio!", false);
 	int mypid = getpid();
-	// printf("\tpid:%d\n", mypid);
+	printf("\tpid:%d\n", mypid);
 
 	setSig(&sigset, SIGUSR1, SIGALRM, true);
 
