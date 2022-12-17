@@ -32,7 +32,7 @@ void Torre(){
 	//printf("\tpid:%d\n",mypid);
 	struct message ms; // message struct
 	int track[tracks];
-	int fifo[10];
+	struct message fifo[childs];
 	memset(&track, 0, sizeof(track)); // set all to false
 	//for(int e = 0; e < tracks; e++){ printf("track %d -> %d\n",e , track[e]);}
 
@@ -48,23 +48,24 @@ void Torre(){
 		if(strcmp(ms.mex, "ready") == 0){
 			pista = release_track(&track, ms.pid, false);
 			if(pista < 0){ // add process to queue
-				fifo[i] = ms.pid;
-				//printf("accodato:%d\n",fifo[i]);
+				fifo[i] = ms;
+				//printf("accodato:%d\n",fifo[i].pid);
 				i++;
+				fifo[i].pid = 0; 
 			}else{
 				//send_mex(&ms, mypid, "ok", ms.pid);
 				print_Event("torre", "decollo autorizato per", false);
-				printf(" %d su pista %d\n", ms.pid, pista);
+				printf(" aereo %d su pista %d\n", ms.child_n, pista);
 				kill(ms.pid, SIGUSR1); // send sig to child to allow takeoff 
 			}
 		}else if(strcmp(ms.mex, "takeoff") == 0){ // check if childs in queue when takeoff
 			release_track(&track, ms.pid, true);
-			if(fifo[j] != NULL){ // unlock child in queue
-				pista = release_track(&track, fifo[j], false);
+			if(fifo[j].pid != 0){ // unlock child in queue
+				pista = release_track(&track, fifo[j].pid, false);
 				//for(int e = 0; e < tracks; e++){ printf("track %d -> %d\n",e , track[e]);}
 				print_Event("torre", "decollo autorizato per", false);
-				printf(" %d su pista %d\n", fifo[j], pista);
-				kill(fifo[j], SIGUSR1);
+				printf(" aereo %d su pista %d\n", fifo[j].child_n, pista);
+				kill(fifo[j].pid, SIGUSR1);
 				//printf("sblocco %d\n", fifo[j]);
 				j++;
 			}

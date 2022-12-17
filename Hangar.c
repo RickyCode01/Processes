@@ -1,8 +1,9 @@
 // processo Hangar Aeroporto
 
-void send_mex(struct message *pms, int source, char *text, int dest){
+void send_mex(struct message *pms, int pid, int num, char *text, int dest){
 	memset(pms, '\0', sizeof(struct message)); // clean structure
-	pms->pid = source;
+	pms->pid = pid;
+	pms->child_n = num;
 	strcpy(pms->mex, text);
 	//printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);
 	if((write(fdw, pms, sizeof(struct message))) < 0)perror("errore write:");
@@ -16,13 +17,13 @@ char get_random(char min, char max){
 	return r;
 }
 
-void Aereo(char *id, int ptorre){
+void Aereo(char *id, int num, int ptorre){
 	struct message ms;
 	sigset_t sigset;
 
-	print_Event(id, "avvio!", false);
+	print_Event(id, "avvio!", true);
 	int mypid = getpid();
-	printf("\tpid:%d\n", mypid);
+	//printf("\tpid:%d\n", mypid);
 
 	setSig(&sigset, SIGUSR1, SIGALRM, true);
 
@@ -37,7 +38,7 @@ void Aereo(char *id, int ptorre){
 	//sigdelset(&sigset, SIGALRM); // remove sigalarm
 	//printf("sig_check: %d\n", sigismember(&sigset, SIGALRM));
 
-	send_mex(&ms, mypid, "ready", ptorre); // send ready to torre
+	send_mex(&ms, mypid, num, "ready", ptorre); // send ready to torre
 	
 	print_Event(id, "richiesta decollo inviata", true);
 
@@ -53,7 +54,7 @@ void Aereo(char *id, int ptorre){
 		//setSig(&sigset, SIGALRM, true);
 		alarm((unsigned int)myrand); // set alarm to awake aereo
 		while(sig != SIGALRM)sigwait(&sigset, &sig); // wait to sigalarm
-		send_mex(&ms, mypid, "takeoff", ptorre); // send takeoff to torre
+		send_mex(&ms, mypid, num, "takeoff", ptorre); // send takeoff to torre
 		print_Event(id, "decollato", true);
 		return;
 	}else{
@@ -78,7 +79,7 @@ void Hangar(){
 		print_Event("hangar", child_event, true);
 		pid[i]=fork();
 		if(pid[i] == 0){
-			Aereo(child_str, ptorre);
+			Aereo(child_str, i, ptorre);
 			exit(1); // chiude i figli
 		}
 		sleep(2);
@@ -91,7 +92,7 @@ void Hangar(){
 	if(WIFEXITED(status) && w==childs){
 		print_Event("hangar", "fine", true);
 		struct message mymex;
-	 	send_mex(&mymex, getpid(), "end", ptorre);
+	 	send_mex(&mymex, getpid(), -1, "end", ptorre);
 	 	close(fdw);
 	}
 
