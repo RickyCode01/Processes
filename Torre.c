@@ -37,6 +37,7 @@ void Torre(){
 
 	int i = 0, j = 0; // init queue index 
 	int pista;
+	bool free = false;
 
 	// setSig(&sigset, SIGUSR1, 0, true); // set signals
 	while(strcmp(ms.mex, "end") != 0){
@@ -57,13 +58,17 @@ void Torre(){
 			}
 		}else if(strcmp(ms.mex, "takeoff") == 0){ // check if childs in queue when takeoff
 			if(fifo[j].pid != 0){ // if child in queue 
-				pista = get_track(&track, ms.pid, fifo[j].pid); // swap track between old and new child 
+				if(free){pista = get_track(&track, 0, fifo[j].pid); free = false;} // if a track was free
+				else pista = get_track(&track, ms.pid, fifo[j].pid); // swap track between old and new child 
 				//for(int e = 0; e < tracks; e++){ printf("track %d -> %d\n",e , track[e]);}
 				print_Event("torre", "decollo autorizzato per", false);
 				printf(" aereo %d su pista %d\n", fifo[j].child_n, pista);
 				kill(fifo[j].pid, SIGUSR1);
 				//printf("sblocco %d\n", fifo[j]);
 				j++;
+			}else{
+				free = true;
+				get_track(&track, ms.pid, 0); //free track
 			}
 		}
 	}
