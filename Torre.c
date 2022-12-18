@@ -1,23 +1,19 @@
 // processo Torre di controllo Areporto
 
+#include <stdio.h>
 void receive_mex(struct message *pms){ // clean struct and send message
 	memset(pms, '\0', sizeof(struct message));
 	read(fdr, pms, sizeof(struct message));
 }
 
-int release_track(int *arr , int pid, bool free){
+int get_track(int *arr , int old, int new){
 	int i;
 	bool change = false;
+	//printf("%d -> %d\n", old, new);
 	for(i = 0; i < tracks; i++){
-		if(free && *(arr + i) == pid){
-			//printf("sblocco %d\n", pid);
-			*(arr + i) = 0;
+		if(*(arr + i) == old){
+			*(arr + i) = new;
 			//for(int j = 0; j < tracks; j++){ printf("track %d -> %d\n",j , *(arr + j));}
-			change = true;
-			break;
-		}else if(*(arr + i) == 0){
-			*(arr + i) = pid;
-			// for(int j = 0; j < tracks; j++){ printf("track %d -> %d\n",j , *(arr + j));}
 			change = true;
 			break;
 		}
@@ -34,6 +30,7 @@ void Torre(){
 	int track[tracks];
 	struct message fifo[childs];
 	memset(&track, 0, sizeof(track)); // set all to false
+	fifo[0].pid = 0; // pid for NULL struct	
 	//for(int e = 0; e < tracks; e++){ printf("track %d -> %d\n",e , track[e]);}
 
 	if((fdr = open(myfifo, O_RDONLY)) < 0)perror("fdr error: ");
@@ -46,24 +43,23 @@ void Torre(){
 		receive_mex(&ms);
 		//printf("torre riceve da %d:%s\n", ms.pid, ms.mex);
 		if(strcmp(ms.mex, "ready") == 0){
-			pista = release_track(&track, ms.pid, false);
-			if(pista < 0){ // add process to queue
-				fifo[i] = ms;
+			pista = get_track(&track, 0, ms.pid);
+			if(pista < 0){ 
+				fifo[i] = ms; // add process to queue
 				//printf("accodato:%d\n",fifo[i].pid);
 				i++;
-				fifo[i].pid = 0; 
+				fifo[i].pid = 0; // set end of queue 
 			}else{
 				//send_mex(&ms, mypid, "ok", ms.pid);
-				print_Event("torre", "decollo autorizato per", false);
+				print_Event("torre", "decollo autorizzato per", false);
 				printf(" aereo %d su pista %d\n", ms.child_n, pista);
 				kill(ms.pid, SIGUSR1); // send sig to child to allow takeoff 
 			}
 		}else if(strcmp(ms.mex, "takeoff") == 0){ // check if childs in queue when takeoff
-			release_track(&track, ms.pid, true);
-			if(fifo[j].pid != 0){ // unlock child in queue
-				pista = release_track(&track, fifo[j].pid, false);
+			if(fifo[j].pid != 0){ // if child in queue 
+				pista = get_track(&track, ms.pid, fifo[j].pid); // swap track between old and new child 
 				//for(int e = 0; e < tracks; e++){ printf("track %d -> %d\n",e , track[e]);}
-				print_Event("torre", "decollo autorizato per", false);
+				print_Event("torre", "decollo autorizzato per", false);
 				printf(" aereo %d su pista %d\n", fifo[j].child_n, pista);
 				kill(fifo[j].pid, SIGUSR1);
 				//printf("sblocco %d\n", fifo[j]);

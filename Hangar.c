@@ -24,7 +24,8 @@ void Aereo(char *id, int num, int ptorre){
 	print_Event(id, "avvio!", true);
 	int mypid = getpid();
 	//printf("\tpid:%d\n", mypid);
-
+ 
+	// set blocked signal for of process
 	setSig(&sigset, SIGUSR1, SIGALRM, true);
 
 	// waiting preparation 
@@ -44,8 +45,6 @@ void Aereo(char *id, int num, int ptorre){
 
 	sig = 0;
 	sigwait(&sigset, &sig); // wait for signaling from torre
-	//receive_mex(&ms);
-	//printf("%d <- %d:%s\n", mypid, ms.pid, ms.mex);
 	if(sig == SIGUSR1){ // check if signal is
 		// prepaire to takeoff
 		unsigned char myrand = get_random(5,15);
@@ -58,7 +57,7 @@ void Aereo(char *id, int num, int ptorre){
 		print_Event(id, "decollato", true);
 		return;
 	}else{
-		printf("segnale ricevuto: %d", sig);
+		printf("segnale ricevuto: %d", sig); // signal debugging
 	}
 }
 
@@ -66,7 +65,7 @@ void Hangar(){
 	int pid[10];
 	int status;
 	int ptorre = getpid()-1;
-	int w;
+	int count;
 	char child_str[10];
 
 	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("fdr error:");
@@ -80,16 +79,16 @@ void Hangar(){
 		pid[i]=fork();
 		if(pid[i] == 0){
 			Aereo(child_str, i, ptorre);
-			exit(1); // chiude i figli
+			exit(1); // close childs when they finished 
 		}
-		sleep(2);
+		sleep(2); // wait 2 sec before next childs
 	}
 
-	for(w = 0; w < childs; w++){ // wait processes to finish
-		waitpid(pid[w] ,&status, 0); 
+	for(count = 0; count < childs; count++){ // wait childs to finish
+		waitpid(pid[count] ,&status, 0); 
 	}
 	
-	if(WIFEXITED(status) && w==childs){
+	if(WIFEXITED(status) && count==childs){
 		print_Event("hangar", "fine", true);
 		struct message mymex;
 	 	send_mex(&mymex, getpid(), -1, "end", ptorre);

@@ -20,23 +20,23 @@ void sigHandler(/*int sig, siginfo_t *si, void *uap*/){
 }
 
 int child_n(char *name){ // return child number from child name
-	while(*name){ // remeber to use pointer value to read single char of string
+	while(*name){ // remember to use pointer value to read single char of string
 		if(isdigit(*name))break; 
 		*name++; // increment pointer
 	} 
 	//printf("test: %d\n", atoi(name));
-	if(*name == 0)return -1; // pointer to NULL value
+	if(*name == '\0')return -1; // pointer to NULL value
 	else return atoi(name); // return integer value of remaining strings number
 }
 
 void print_Event(char* source, char* description, bool newline){
 	//fflush(stdout);
-	time_t now; // struttura di memorizzazione tempo attuale
-	time(&now); // funzione per salvare tempo attuale nella struttura
-	struct tm *pTm = localtime(&now);
-	char format[256] = "%02d:%02d:%02d";
+	time_t now; // struct to save current calendar time 
+	time(&now); // fun to save in struct current calendar time 
+	struct tm *pTm = localtime(&now); // take calendar time and return a pointer to struct containig time from epoch 
+	char format[256] = "%02d:%02d:%02d"; // format to print time
 	//printf("cld_n:%d\n", child_n("aereo 11"));
-	if(!strcmp(source, "torre") || !strcmp(source, "hangar")) strcat(format, "\e[1m");
+	if(!strcmp(source, "torre") || !strcmp(source, "hangar")) strcat(format, "\e[1m"); // if torre or hangar use bold
 	else strcat(format, colours[child_n(source)%size]);
 	strcat(format, " %s\033[0m:%s\n");
 	if(!newline) format[strlen(format)-1] = '\0';
@@ -62,17 +62,16 @@ int main(int argc, char const *argv[])
 	//char *myfifo = "/tmp/myfifo";
 	/* S_IRWXU is a definition in stat.h in octal value to set
 	fifo file permission for OS */
-	if(mkfifo(myfifo, S_IRWXU) < 0) perror("errore fifo:"); // creo la named pipe
-	/* verificare errore apertura canali fifo ed eventualmente generare codice errore*/
+	if(mkfifo(myfifo, S_IRWXU) < 0) perror("errore fifo:"); // make named pipe 
 
 	//if((fdr = open(myfifo, O_RDONLY | O_NONBLOCK)) < 0)perror("errore fdr:"); // open fifo for reading
 	//if((fdw = open(myfifo, O_WRONLY)) < 0)perror("errore fdw:"); // open fifo to writing
 	int ptorre, phangar;
 	int stat;
 
-	struct sigaction sa; 
+	struct sigaction sa; //struct for set signals action 
 	memset(&sa, '\0', sizeof(struct sigaction)); // reset structure  
-	sa.sa_handler = &sigHandler; // pointer to function
+	sa.sa_handler = &sigHandler; // pointer to fun called when signals are raised
   	// sa.sa_flags = SA_RESTART /*| SA_SIGINFO */; 
 
 	// set signal action to change behavior 
@@ -87,10 +86,10 @@ int main(int argc, char const *argv[])
 		if(phangar == 0){ Hangar(); exit(1); }
 	}
 
-waitpid(ptorre ,&stat, NULL);
+waitpid(ptorre ,&stat, NULL); // wait for torre to finish
 	if(WIFEXITED(stat)){
 		printf("closing...\n");
-		unlink(myfifo); // close pipe
+		unlink(myfifo); // delete pipe 
 	}		
 	return 0;
 }
