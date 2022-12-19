@@ -41,7 +41,7 @@ void Aereo(char *id, int num, int ptorre){
 
 	send_mex(&ms, mypid, num, "ready", ptorre); // send ready to torre
 	
-	print_Event(id, "richiesta decollo inviata", true);
+	print_Event(id, "richiedo decollo a torre", true);
 
 	sig = 0;
 	sigwait(&sigset, &sig); // wait for signaling from torre
@@ -91,7 +91,7 @@ void Hangar(){
 	if(WIFEXITED(status) && count==childs){
 		print_Event("hangar", "fine", true);
 		struct message mymex;
-	 	send_mex(&mymex, getpid(), -1, "end", ptorre);
+	 	send_mex(&mymex, getpid(), -1, "end", ptorre); // airplanes terminated
 	 	close(fdw);
 	}
 

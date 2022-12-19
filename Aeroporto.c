@@ -6,7 +6,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/stat.h>
+#include <sys/stat.h> // S_definitions
 #include <fcntl.h>
 #include <stdbool.h>
 #include <ctype.h>
