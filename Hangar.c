@@ -62,7 +62,7 @@ void Aereo(char *id, int num, int ptorre){
 }
 
 void Hangar(){
-	int pid[10];
+	int pid[childs];
 	int status;
 	int ptorre = getpid()-1;
 	int count;
