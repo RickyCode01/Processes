@@ -1,7 +1,7 @@
 // header file for standard type definition and shared functions
 
 const int childs = 12;  
-const int tracks = 3; 
+const int runways = 3; 
 char *myfifo = "/tmp/myfifo"; // named pipe path
 int fdw, fdr; // files descriptor for read and write pipe
 
