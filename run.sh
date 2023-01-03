@@ -1,6 +1,8 @@
 #!/bin/sh
 
-printf "\tAREOPORTO - Riccardo Manoni - 2021/2022\n\n"
+clear
+
+printf "\t\tAREOPORTO - Riccardo Manoni - 2021/2022\n\n"
 
 if test -p "/tmp/myfifo"
 then 
