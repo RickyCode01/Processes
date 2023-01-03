@@ -1,15 +1,19 @@
 // processo Hangar Aeroporto
 
 void send_mex(struct message *pms, int pid, int num, char *text, int dest){
-	memset(pms, '\0', sizeof(struct message)); // clean structure
+	/* fun to send struct message to pipe */
+	memset(pms, '\0', sizeof(struct message)); // clean struct
+	// write fileds
 	pms->pid = pid;
 	pms->child_n = num;
 	strcpy(pms->mex, text);
 	//printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);
+	// send message
 	if((write(fdw, pms, sizeof(struct message))) < 0)perror("errore write:");
 }
 
 char get_random(char min, char max){
+	/* fun to generate random value in range */
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	srand(tv.tv_usec); // set the seed for random generation 
@@ -18,6 +22,7 @@ char get_random(char min, char max){
 }
 
 void Aereo(char *id, int num, int ptorre){
+	/* fun executed by childs */
 	struct message ms;
 	sigset_t sigset;
 
@@ -25,7 +30,7 @@ void Aereo(char *id, int num, int ptorre){
 	int mypid = getpid();
 	//printf("\tpid:%d\n", mypid);
  
-	// set blocked signal for of process
+	// set blocked signal of child
 	setSig(&sigset, SIGUSR1, SIGALRM, true);
 
 	// waiting preparation 
@@ -45,12 +50,11 @@ void Aereo(char *id, int num, int ptorre){
 
 	sig = 0;
 	sigwait(&sigset, &sig); // wait for signaling from torre
-	if(sig == SIGUSR1){ // check if signal is
-		// prepaire to takeoff
+	if(sig == SIGUSR1){ // check signal
+		// preparation to takeoff
 		unsigned char myrand = get_random(5,15);
 		print_Event(id, "decollo ", false);
 		printf("in %d secondi\n", myrand);
-		//setSig(&sigset, SIGALRM, true);
 		alarm((unsigned int)myrand); // set alarm to awake aereo
 		while(sig != SIGALRM)sigwait(&sigset, &sig); // wait to sigalarm
 		send_mex(&ms, mypid, num, "takeoff", ptorre); // send takeoff to torre
@@ -64,21 +68,20 @@ void Aereo(char *id, int num, int ptorre){
 void Hangar(){
 	int pid[childs];
 	int status;
-	int ptorre = getpid()-1;
 	int count;
 	char child_str[10];
 
-	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("fdr error:");
+	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("fdr error:"); // open fd pipe for writing
 
 	print_Event("hangar", "avvio!", true);
-	for(int i = 0; i < childs; i++){
+	for(int i = 0; i < childs; i++){ // generate childs -> fork
 		sprintf(child_str, "aereo %d", i);
 		char child_event[25] = "creazione ";
 		strcat(child_event, child_str);
 		print_Event("hangar", child_event, true);
 		pid[i]=fork();
 		if(pid[i] == 0){
-			Aereo(child_str, i, ptorre);
+			Aereo(child_str, i, ptower);
 			exit(1); // close childs when they finished 
 		}
 		sleep(2); // wait 2 sec before next childs
@@ -91,7 +94,7 @@ void Hangar(){
 	if(WIFEXITED(status) && count==childs){
 		print_Event("hangar", "fine", true);
 		struct message mymex;
-	 	send_mex(&mymex, getpid(), -1, "end", ptorre); // airplanes terminated
+	 	send_mex(&mymex, getpid(), -1, "end", ptower); // airplanes terminated
 	 	close(fdw);
 	}
 

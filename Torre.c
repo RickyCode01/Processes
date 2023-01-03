@@ -7,6 +7,7 @@ void receive_mex(struct message *pms){ // clean struct and send message
 }
 
 int get_runway(int *arr , int old, int new){
+	/* fun to handle runways */
 	int i;
 	bool change = false; // flag for changes
 	//printf("%d -> %d\n", old, new);
@@ -26,16 +27,16 @@ void Torre(){
 	print_Event("torre", "avvio!", true);
 	int mypid = getpid();
 	//printf("\tpid:%d\n",mypid);
-	struct message ms; // message struct
-	int runway[runways];
+	struct message ms; // message struct to receive messages
+	int runway[runways]; // runways array
 	struct message fifo[childs]; // buffer of messages 
 	memset(&runway, 0, sizeof(runway)); // set all runways to false
 	fifo[0].pid = 0; // set pid of end struct	
 	//for(int e = 0; e < runway; e++){ printf("runway %d -> %d\n",e , runway[e]);}
 
-	if((fdr = open(myfifo, O_RDONLY)) < 0)perror("fdr error: ");
+	if((fdr = open(myfifo, O_RDONLY)) < 0)perror("fdr error: "); // open fd fifo for reading
 
-	int i = 0, j = 0; // init queue indexes 
+	int i = 0, j = 0; // init queue indexes
 	int pista; // returned runway number from fun
 	bool cleared; // boolean flag to check for free runway
 
@@ -67,7 +68,7 @@ void Torre(){
 				//printf("sblocco %d\n", fifo[j]);
 				j++;
 			}else{
-				cleared = true; // runway cleared
+				cleared = true;
 				get_runway(&runway, ms.pid, 0); //clear runway
 			}
 		}
