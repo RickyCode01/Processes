@@ -92,7 +92,7 @@ void Hangar(){
 	}
 	
 	if(WIFEXITED(status) && count==childs){
-		print_Event("hangar", "fine", true);
+		print_Event("hangar", "tutti gli aerei sono decollati", true);
 		struct message mymex;
 	 	send_mex(&mymex, getpid(), -1, "end", ptower); // airplanes terminated
 	 	close(fdw);

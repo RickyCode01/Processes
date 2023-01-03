@@ -1,6 +1,5 @@
 // processo Torre di controllo Areporto
 
-#include <stdio.h>
 void receive_mex(struct message *pms){ // clean struct and send message
 	memset(pms, '\0', sizeof(struct message));
 	read(fdr, pms, sizeof(struct message));
@@ -45,6 +44,8 @@ void Torre(){
 		receive_mex(&ms); // passive waiting for messages in named pipe
 		//printf("torre riceve da %d:%s\n", ms.pid, ms.mex);
 		if(strcmp(ms.mex, "ready") == 0){ // check for ready messages from childs
+			print_Event("torre", "richiesta decollo ", false);
+			printf("aereo %d ricevuta\n", ms.child_n);
 			pista = get_runway(&runway, 0, ms.pid); // give runway
 			if(pista < 0){ // if runways aren't available
 				fifo[i] = ms; // add process to queue
@@ -75,5 +76,5 @@ void Torre(){
 	}
 
 	close(fdr);
-	print_Event("torre", "fine", true);
+	print_Event("torre", "terminazione", true);
 }

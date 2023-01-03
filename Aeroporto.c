@@ -87,7 +87,6 @@ int main(int argc, char const *argv[])
 
 waitpid(ptorre ,&stat, NULL); // wait for torre to finish
 	if(WIFEXITED(stat)){
-		printf("closing...\n");
 		unlink(myfifo); // delete pipe 
 	}		
 	return 0;
