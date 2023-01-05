@@ -9,8 +9,6 @@ L'idea alla base è quella che gli aerei generati da hangar, possano comunicare 
 Questa scelta è dovuta a diversi fattori: il primo è che se comunicassi solo attraverso i segnali avrei dei problemi nella loro gestione in quanto, potrebbero essere generati piu segnali contemporaneamente dai vari figli e alcuni di essi andrebbero persi. 
 La torre poi avrà difficoltà a comunicare con i figli solo utilizzando la pipe poichè ogni figlio è un diverso processo, mentre la coda dei messaggi è unica quindi per evitare complicazioni dovute alla caratterizzione dei messaggi ho scelto una strategia combinata.
 La torre utilizzando la pipe per la ricezione dei messaggi sfrutta la logica FIFO che la pipe stessa implementa. Questo approccio oltre ad essere funzionale è anche completo poichè utilizza più strumenti visti durante il corso.
-Per gli aerei che dopo la richiesta di decollo non dispongono di una pista libera è stato creato un buffer che contiene le loro richieste di decollo e che viene di volta in volta svuotato, sempre utilizzando la logica fifo, quando un altro aereo è decollato.
-
 
 Struttura:
  
@@ -22,7 +20,7 @@ Il programma padre(Aeroporto.c) contiene il codice iniziale per l'avvio dei proc
 Inoltre nel main viene creata la named pipe e settata la struttura sigaction per determinare l'azione da compiere nel caso in cui i segnali SIGALRM e SIGUSR1 siano generati e in modo tale da condividere questo settaggio con i figli.
 
 Torre.c è il modulo che viene eseguito dal primo figlio generato da Aeroporto.c e si occupa di gestire le richieste provenienti dagli aerei. Contiene due funzioni utili al suo funzionamento: receive_mex che permette di leggere un messaggio dalla pipe e get_runway per gestire l'array delle piste.
-Per selezionare una pista libera è stato creato un array di interi contente i pid dei processi a cui viene assegnata una pista(prende spunto dalla compare_and_swap): quando un aereo richiede il decollo si cerca nell'array una pista libera(valore 0) e se questa è presente viene assegnata al processo altrimenti il messaggio viene inserito in coda fifo in attesa che una pista si liberi. Nel caso invece che un aereo sia decollato si cerca un aereo pronto al decollo nella coda e se non presente si libera la pista per future richieste.
+Per selezionare una pista libera è stato creato un array di interi contente i pid dei processi a cui viene assegnata una pista(prende spunto dalla compare_and_swap): quando un aereo richiede il decollo si cerca nell'array una pista libera(valore 0) e se questa è presente viene assegnata al all'aereo altrimenti il messaggio viene inserito in coda fifo in attesa che una pista si liberi. Nel caso invece che un aereo sia decollato si cerca un aereo pronto al decollo nella coda e se non presente si libera la pista per future richieste.
 
 Hangar.c è il modulo che viene eseguito dal secondo figlio di Aeroporto.c e si occupa di creare e gestire il comportamento dei vari aerei(figli del processo hangar). 
 Contiene le definizioni di due funzioni utili al suo funzionamento: send_message per scrivere un messaggio nella pipe e get_random per generare numeri randomici in un determinato range.
