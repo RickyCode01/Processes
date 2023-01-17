@@ -1,6 +1,6 @@
 #!/bin/sh
 
-clear
+clear #clear screen
 
 printf "\t\tAREOPORTO - Riccardo Manoni - 2021/2022\n\n"
 

@@ -4,11 +4,11 @@
 #include <time.h>
 #include <signal.h>
 #include <string.h> // memset fun
-#include <sys/types.h> // follow two libs for named fifo 
+#include <sys/types.h> // follow two libs for named fifo
 #include <sys/wait.h>
 #include <sys/stat.h> // S_definitions
 #include <fcntl.h> // file control
-#include <stdbool.h> // boolean 
+#include <stdbool.h> // booleans 
 #include <ctype.h> // is_digit fun
 #include "Aeroporto.h"
 #include "Torre.c"

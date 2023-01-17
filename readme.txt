@@ -13,8 +13,8 @@ La torre utilizzando la pipe per la ricezione dei messaggi sfrutta la logica FIF
 Struttura:
  
 l'header(Aeroporto.h) contiene le costanti utili ai vari moduli del programma, come il numero dei figli generati e le piste disponibili, cosi da poter cambiare un solo parametro qualora si voglia testare il programma diversamente da quanto inizialmente impostato senza dover cambiare ogni riferimento. 
-Inoltre esso contiene la definizione della struttura di un messaggio che poi verrà utilizzata dagli aerei e dall'hangar per comunicare con la torre e dalla torre per ricevere i vari messaggi.
-Le due funzioni presenti all'interno dell'header, Print_event e Sigset sono utilizzate da più processi rispettivamente per stampare con in formato adeguato i messaggi su stdout e per impostare la mascheratura dei segnali da bloccare.
+Inoltre esso contiene la dichiarazione della struttura di un messaggio che poi verrà utilizzata dagli aerei e dall'hangar per comunicare con la torre e dalla torre per ricevere i vari messaggi.
+Le due funzioni presenti all'interno dell'header, Print_event e Sigset sono utilizzate da più processi rispettivamente per stampare con in formato adeguato i messaggi e per impostare la mascheratura dei segnali da bloccare.
 
 Il programma padre(Aeroporto.c) contiene il codice iniziale per l'avvio dei processi Torre ed Hangar originati tramite le fork, le dichiarazioni delle funzioni globali dichiarate nell'header e gli header delle varie librerie C.
 Inoltre nel main viene creata la named pipe e settata la struttura sigaction per determinare l'azione da compiere nel caso in cui i segnali SIGALRM e SIGUSR1 siano generati e in modo tale da condividere questo settaggio con i figli.

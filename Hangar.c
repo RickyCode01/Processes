@@ -3,12 +3,12 @@
 void send_mex(struct message *pms, int pid, int num, char *text, int dest){
 	/* fun to send struct message to pipe */
 	memset(pms, '\0', sizeof(struct message)); // clean struct
-	// write fileds
+	// write fields struct
 	pms->pid = pid;
 	pms->child_n = num;
 	strcpy(pms->mex, text);
 	//printf("%d -> %d mex:%s\n", pms->pid, dest, pms->mex);
-	// send message
+	// send message to pipe
 	if((write(fdw, pms, sizeof(struct message))) < 0)perror("errore write:");
 }
 
@@ -17,7 +17,7 @@ char get_random(char min, char max){
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	srand(tv.tv_usec); // set the seed for random generation 
-	unsigned char r = min + (rand() % (max-min));
+	unsigned char r = min + (rand() % (max-min)); // range random values
 	return r;
 }
 
@@ -66,23 +66,23 @@ void Aereo(char *id, int num, int ptorre){
 }
 
 void Hangar(){
-	int pid[childs];
-	int status;
-	int count;
-	char child_str[10];
+	int pid[childs]; // childs pid
+	int status; // status childs var
+	int count; 
+	char child_str[10]; // contain airplanes name
 
 	if((fdw = open(myfifo, O_WRONLY)) < 0)perror("fdr error:"); // open fd pipe for writing
 
 	print_Event("hangar", "avvio!", true);
 	for(int i = 0; i < childs; i++){ // generate childs -> fork
-		sprintf(child_str, "aereo %d", i);
-		char child_event[25] = "creazione ";
-		strcat(child_event, child_str);
+		sprintf(child_str, "aereo %d", i); // create string to print airplanes name
+		char child_event[25] = "creazione "; 
+		strcat(child_event, child_str); // string to init airplanes
 		print_Event("hangar", child_event, true);
 		pid[i]=fork();
 		if(pid[i] == 0){
 			Aereo(child_str, i, ptower);
-			exit(1); // close childs when they finished 
+			exit(1); // close child processes when they finished 
 		}
 		sleep(2); // wait 2 sec before next childs
 	}
@@ -91,10 +91,11 @@ void Hangar(){
 		waitpid(pid[count] ,&status, 0); 
 	}
 	
-	if(WIFEXITED(status) && count==childs){
+	if(WIFEXITED(status) && count==childs){ // check if all childs close
+		/* close operations */
 		print_Event("hangar", "tutti gli aerei sono decollati", true);
-		struct message mymex;
-	 	send_mex(&mymex, getpid(), -1, "end", ptower); // airplanes terminated
+		struct message end_mex; // end message
+	 	send_mex(&end_mex, getpid(), -1, "end", ptower);
 	 	close(fdw);
 	}
 
